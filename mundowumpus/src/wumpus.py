@@ -17,7 +17,7 @@ class MeuAmbiente(gym.Env):
         self.observation_space = gym.spaces.Dict(
             {
                 "posicao": gym.spaces.Box(0, 4, shape=(2,), dtype=float),
-                "brilho": gym.spaces.Box(0, 1, shape=(1,), dtype=float),
+                "brisa": gym.spaces.Box(0, 1, shape=(1,), dtype=float),
                 "fedor": gym.spaces.Box(0, 1, shape=(1, ), dtype=float)
             })
         self.reset()
@@ -61,7 +61,7 @@ class MeuAmbiente(gym.Env):
         self.pos_agente = (0, 0)
         self.objetivo = (size-1, 0)
         return {'posicao': np.array(self.pos_agente, dtype=float), 
-                'brilho': np.array([1] if self.temBrisa() else [0], dtype=float), 
+                'brisa': np.array([1] if self.temBrisa() else [0], dtype=float), 
                 'fedor': np.array([1] if self.temFedor() else [0], dtype=float) }, {}
 
     def step(self, acao):
@@ -69,39 +69,34 @@ class MeuAmbiente(gym.Env):
         if acao == MeuAmbiente.ACAO_DIR:
             prox_linha = p[0] + 1
             if prox_linha < self.size:
-                self.grade[p[0]][p[1]] = MeuAmbiente.ID_PISO
-                self.grade[p[0] + 1][p[1]] = MeuAmbiente.ID_AGENTE
                 self.pos_agente = (prox_linha, p[1])
         elif acao == MeuAmbiente.ACAO_ESQ:
             prox_linha = p[0] - 1
             if prox_linha >= 0:
-                self.grade[p[0]][p[1]] = MeuAmbiente.ID_PISO
-                self.grade[p[0] - 1][p[1]] = MeuAmbiente.ID_AGENTE
                 self.pos_agente = (prox_linha, p[1])
         elif acao == MeuAmbiente.ACAO_ACIMA:
             prox_col = p[1] + 1
             if prox_col < self.size:
-                self.grade[p[0]][p[1]] = MeuAmbiente.ID_PISO
-                self.grade[p[0]][p[1] + 1] = MeuAmbiente.ID_AGENTE
                 self.pos_agente = (p[0], prox_col)
-        elif acao == MeuAmbiente.ACAO_ACIMA:
+        elif acao == MeuAmbiente.ACAO_ABAIXO:
             prox_col = p[1] - 1
             if prox_col >= 0:
-                self.grade[p[0]][p[1]] = MeuAmbiente.ID_PISO
-                self.grade[p[0]][p[1] - 1] = MeuAmbiente.ID_AGENTE
                 self.pos_agente = (p[0], prox_col)
-        recompensa = 0
+        recompensa = -0.001
         nps = self.pos_agente #nova posicao
         fim = False
         if self.pos_agente == self.objetivo:
-            recompensa = 0
+            recompensa = 1
             fim = True #agente alcançou o alvo
         elif (self.grade[nps[0]][nps[1]] == MeuAmbiente.ID_WUMPUS or
                 self.grade[nps[0]][nps[1]] == MeuAmbiente.ID_POCO):
             recompensa = -1
             fim = True #agente morreu
+        else:
+            self.grade[p[0]][p[1]] = MeuAmbiente.ID_PISO
+            self.grade[nps[0]][nps[1]] = MeuAmbiente.ID_AGENTE
         return  ({'posicao': np.array(self.pos_agente, dtype=float), 
-                 'brilho': np.array([1] if self.temBrisa() else [0], dtype=float), 
+                 'brisa': np.array([1] if self.temBrisa() else [0], dtype=float), 
                  'fedor': np.array([1] if self.temFedor() else [0], dtype=float) }, 
                     recompensa, 
                     np.bool_(fim), 
